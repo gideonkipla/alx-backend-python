@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Defines the basic async syntax"""
+"""Defines async_generator"""
+from random import random
+from typing import Generator
 import asyncio
-import random
 
 
-async def wait_random(max_delay: int = 10) -> float:
-    """Async syntax"""
-    wait = random.random() * max_delay
-    await asyncio.sleep(wait)
-    return wait
+async def async_generator() -> Generator[float, None, None]:
+    """Yields a random int 10 times"""
+    for i in range(10):
+        await asyncio.sleep(1)
+        yield random() * 10
