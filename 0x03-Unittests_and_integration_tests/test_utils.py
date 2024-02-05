@@ -1,75 +1,88 @@
 #!/usr/bin/env python3
-"""Generic utilities for github org client.
 """
-import requests
-from functools import wraps
-from typing import (
-    Mapping,
-    Sequence,
-    Any,
-    Dict,
-    Callable,
-)
-
-__all__ = [
-    "access_nested_map",
-    "get_json",
-    "memoize",
-]
+Parameterize a unit test
+"""
+import unittest
+from parameterized import parameterized
+from unittest.mock import patch, Mock
+from utils import access_nested_map, get_json, memoize
 
 
-def access_nested_map(nested_map: Mapping, path: Sequence) -> Any:
-    """Access nested map with key path.
-    Parameters
-    ----------
-    nested_map: Mapping
-        A nested map
-    path: Sequence
-        a sequence of key representing a path to the value
-    Example
-    -------
-    >>> nested_map = {"a": {"b": {"c": 1}}}
-    >>> access_nested_map(nested_map, ["a", "b", "c"])
-    1
+class TestAccessNestedMap(unittest.TestCase):
     """
-    for key in path:
-        if not isinstance(nested_map, Mapping):
-            raise KeyError(key)
-        nested_map = nested_map[key]
-
-    return nested_map
-
-
-def get_json(url: str) -> Dict:
-    """Get JSON from remote URL.
+    class that inherits from unittest.TestCase
     """
-    response = requests.get(url)
-    return response.json()
+    @parameterized.expand([
+        ({"a": 1}, ("a",), 1),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2)
+    ])
+    def test_access_nested_map(self, nested_map, path, expected):
+        """
+        method to test that the method returns what it is supposed to.
+        """
+        self.assertEqual(access_nested_map(nested_map, path), expected)
+
+    @parameterized.expand([
+        ({}, ("a",)),
+        ({"a": 1}, ("a", "b"))
+    ])
+    def test_access_nested_map_exception(self, nested_map, path):
+        """
+         test that a KeyError is raised for
+         the following inputs (use @parameterized.expand)
+        """
+        with self.assertRaises(KeyError):
+            access_nested_map(nested_map, path)
 
 
-def memoize(fn: Callable) -> Callable:
-    """Decorator to memoize a method.
-    Example
-    -------
-    class MyClass:
-        @memoize
-        def a_method(self):
-            print("a_method called")
-            return 42
-    >>> my_object = MyClass()
-    >>> my_object.a_method
-    a_method called
-    42
-    >>> my_object.a_method
-    42
+class TestGetJson(unittest.TestCase):
     """
-    attr_name = "_{}".format(fn.__name__)
+     implement the TestGetJson.test_get_json
+     method to test that utils.get_json returns the expected result.
+    """
+    @parameterized.expand([
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False})
+    ])
+    def test_get_json(self, url, payload):
+        """
+        method to test that the method returns what it is supposed to.
+        """
+        class Mocked(Mock):
+            """
+            class that inherits from Mock
+            """
 
-    @wraps(fn)
-    def memoized(self):
-        """"memoized wraps"""
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, fn(self))
-        return getattr(self, attr_name)
+            def json(self):
+                """
+                json returning a payload
+                """
+                return payload
 
-    return property(memoized)
+        with patch("requests.get") as MockClass:
+            MockClass.return_value = Mocked()
+            self.assertEqual(get_json(url), payload)
+
+
+class TestMemoize(unittest.TestCase):
+    ''' memoize unittest '''
+
+    def test_memoize(self):
+        ''' memoize test '''
+
+        class TestClass:
+            ''' self descriptive'''
+
+            def a_method(self):
+                return 42
+
+            @memoize
+            def a_property(self):
+                return self.a_method()
+
+        with patch.object(TestClass, 'a_method') as mocked:
+            spec = TestClass()
+            spec.a_property
+            spec.a_property
+            mocked.asset_called_once()
